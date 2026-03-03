@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw — Agent Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#eaeae7;--panel:#e2e2de;--panel2:#d8d8d4;--panel3:#cececa;
+  --border:#d0d0cc;--border2:#c4c4bf;
+  --text:#1c1c1a;--text2:#4a4a47;--text3:#888884;
+  --accent:#ff6b35;--abg:rgba(255,107,53,.09);--abr:rgba(255,107,53,.25);
+  --blue:#2563eb;--bbg:rgba(37,99,235,.07);
+  --green:#16a34a;--gbg:rgba(22,163,74,.07);
+  --purple:#7c3aed;--pbg:rgba(124,58,237,.07);
+  --red:#dc2626;
+  --nav:56px;--side:220px;--r:7px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --sh2:0 4px 14px rgba(0,0,0,.09);
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',-apple-system,sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+.app{display:flex;height:100vh;overflow:hidden;}
+
+/* Icon nav */
+.inav{width:var(--nav);background:var(--panel2);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px;flex-shrink:0;}
+.nlogo{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;color:#fff;margin-bottom:8px;}
+.ni{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);position:relative;border:1px solid transparent;transition:all .15s;}
+.ni:hover{background:var(--panel3);color:var(--text2);}
+.ni.on{background:var(--bg);color:var(--accent);border-color:var(--border);box-shadow:var(--sh);}
+.tip{position:absolute;left:calc(100% + 10px);background:var(--text);color:#fff;font-size:11px;font-family:var(--mono);padding:4px 8px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transform:translateX(-4px);transition:all .15s;z-index:100;}
+.ni:hover .tip{opacity:1;transform:translateX(0);}
+.nsep{width:24px;height:1px;background:var(--border);margin:4px 0;}
+.nbot{margin-top:auto;}
+.pip{width:7px;height:7px;border-radius:50%;background:var(--text3);transition:all .3s;}
+.pip.on{background:var(--green);box-shadow:0 0 0 2px var(--gbg);}
+.pip.err{background:var(--red);}
+
+/* Sidebar */
+.sb{width:var(--side);background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+.sbh{padding:14px 14px 10px;border-bottom:1px solid var(--border);}
+.sbt{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);}
+.sbb{flex:1;overflow-y:auto;padding:8px;}
+.sbb::-webkit-scrollbar{width:3px;}
+.sbb::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+.mh{padding:0 18px;height:44px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--panel);flex-shrink:0;}
+.mht{font-size:13px;font-weight:500;font-family:var(--mono);color:var(--text2);}
+.mha{margin-left:auto;display:flex;gap:6px;align-items:center;}
+
+/* Views */
+.view{display:none;flex:1;overflow:hidden;}
+.view.on{display:flex;flex-direction:column;}
+.vrow{display:flex;flex:1;min-width:0;overflow:hidden;}
+
+/* Buttons */
+.btn{padding:6px 13px;border-radius:6px;font-family:var(--sans);font-size:12.5px;font-weight:500;cursor:pointer;transition:all .13s;display:inline-flex;align-items:center;gap:6px;border:none;}
+.bprim{background:var(--accent);color:#fff;}.bprim:hover{background:#ff8252;}
+.bghost{background:transparent;color:var(--text2);border:1px solid var(--border2);}.bghost:hover{background:var(--panel2);}
+.bsm{padding:4px 10px;font-size:11.5px;}
+.newbtn{width:100%;padding:8px;border-radius:6px;background:transparent;border:1px dashed var(--border2);color:var(--text3);font-size:12px;font-family:var(--sans);cursor:pointer;transition:all .13s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.newbtn:hover{border-color:var(--accent);color:var(--accent);background:var(--abg);}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10.5px;font-family:var(--mono);font-weight:500;}
+.ba{background:var(--abg);color:var(--accent);border:1px solid var(--abr);}
+.bb{background:var(--bbg);color:var(--blue);border:1px solid rgba(37,99,235,.2);}
+.bg{background:var(--gbg);color:var(--green);border:1px solid rgba(22,163,74,.2);}
+.bp{background:var(--pbg);color:var(--purple);border:1px solid rgba(124,58,237,.2);}
+.bgr{background:var(--panel2);color:var(--text3);border:1px solid var(--border);}
+
+.scr{flex:1;overflow-y:auto;padding:20px;}
+.scr::-webkit-scrollbar{width:4px;}
+.scr::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.inn{max-width:900px;margin:0 auto;}
+.slbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:12px;}
+.div{height:1px;background:var(--border);margin:18px 0;}
+
+/* ── CHAT ── */
+.cmsgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:2px;}
+.cmsgs::-webkit-scrollbar{width:4px;}
+.cmsgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.mrow{display:flex;gap:10px;max-width:760px;margin:0 auto;width:100%;padding:4px 0;}
+.mrow.u{justify-content:flex-end;}
+.av{width:26px;height:26px;border-radius:6px;background:var(--accent);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;color:#fff;}
+.bub{max-width:78%;padding:10px 14px;border-radius:10px;font-size:14px;line-height:1.65;word-break:break-word;}
+.bub.u{background:#2a2927;color:#f5f5f3;border-bottom-right-radius:3px;}
+.arow{display:flex;gap:12px;max-width:760px;margin:6px auto;width:100%;}
+.ac{flex:1;font-size:14.5px;line-height:1.75;color:var(--text);}
+.ac code{font-family:var(--mono);font-size:12px;background:var(--panel3);border:1px solid var(--border);padding:1px 5px;border-radius:4px;color:var(--accent);}
+.ac pre{background:var(--panel2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;overflow-x:auto;margin:8px 0;position:relative;}
+.ac pre code{background:none;border:none;padding:0;color:var(--text);font-size:12px;}
+.cpybtn{position:absolute;top:6px;right:6px;padding:2px 7px;background:var(--panel3);border:1px solid var(--border2);border-radius:4px;font-size:10px;font-family:var(--mono);color:var(--text3);cursor:pointer;opacity:0;transition:opacity .15s;}
+.ac pre:hover .cpybtn{opacity:1;}
+.ac p{margin-bottom:8px;}.ac p:last-child{margin-bottom:0;}
+.ac ul,.ac ol{padding-left:18px;margin:6px 0;}.ac li{margin:3px 0;}
+.cur{display:inline-block;width:2px;height:1em;background:var(--accent);vertical-align:text-bottom;animation:blink .8s steps(1) infinite;margin-left:1px;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.emp{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text3);user-select:none;padding:20px;}
+.eico{width:44px;height:44px;background:var(--panel);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.etit{font-size:16px;font-weight:500;color:var(--text2);}
+.esub{font-size:12.5px;color:var(--text3);text-align:center;max-width:300px;}
+.sugs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:440px;margin-top:6px;}
+.sug{padding:6px 12px;background:var(--panel);border:1px solid var(--border);border-radius:16px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .12s;}
+.sug:hover{background:var(--panel2);border-color:var(--border2);}
+.cinp{padding:12px 20px 16px;background:var(--bg);border-top:1px solid var(--border);flex-shrink:0;}
+.iwrap{max-width:760px;margin:0 auto;position:relative;background:#fff;border:1px solid var(--border2);border-radius:10px;transition:all .15s;}
+.iwrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--abg);}
+textarea{width:100%;background:transparent;border:none;outline:none;resize:none;padding:12px 46px 12px 14px;font-family:var(--sans);font-size:14.5px;color:var(--text);line-height:1.5;min-height:46px;max-height:180px;overflow-y:auto;display:block;}
+textarea::placeholder{color:var(--text3);}
+.sbtn{position:absolute;right:8px;bottom:8px;width:30px;height:30px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:all .13s;}
+.sbtn:hover{background:#ff8252;}.sbtn:disabled{background:var(--panel3);color:var(--text3);cursor:not-allowed;}
+.iht{max-width:760px;margin:6px auto 0;font-size:11px;color:var(--text3);font-family:var(--mono);display:flex;justify-content:space-between;}
+.hi{padding:7px 9px;border-radius:5px;cursor:pointer;font-size:12.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .12s;border:1px solid transparent;margin-bottom:2px;}
+.hi:hover{background:var(--panel2);}.hi.on{background:var(--bg);border-color:var(--border);}
+
+/* ── WORKFLOW CANVAS ── */
+.canvas{flex:1;position:relative;overflow:hidden;background-color:var(--bg);background-image:radial-gradient(circle,var(--border) 1px,transparent 1px);background-size:24px 24px;}
+.wnode{position:absolute;background:var(--panel);border:1.5px solid var(--border);border-radius:10px;width:175px;cursor:grab;user-select:none;box-shadow:var(--sh);transition:box-shadow .15s,border-color .15s;}
+.wnode:hover{box-shadow:var(--sh2);border-color:var(--border2);}
+.wnode.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--abg);}
+.wnode.drag{cursor:grabbing;box-shadow:var(--sh2);z-index:100;}
+.nhdr{padding:9px 12px 7px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.nico{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+.nlbl{font-size:11.5px;font-weight:600;color:var(--text);font-family:var(--mono);}
+.ntyp{font-size:10px;color:var(--text3);font-family:var(--mono);}
+.nbod{padding:8px 12px 10px;font-size:11px;color:var(--text2);line-height:1.4;}
+.port{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--bg);border:2px solid var(--border2);cursor:crosshair;transition:all .13s;z-index:5;}
+.port:hover{background:var(--accent);border-color:var(--accent);transform:scale(1.3);}
+.port.pi{left:-6px;top:50%;transform:translateY(-50%);}
+.port.po{right:-6px;top:50%;transform:translateY(-50%);}
+.port.pi:hover{transform:translateY(-50%) scale(1.3);}
+.port.po:hover{transform:translateY(-50%) scale(1.3);}
+.wsvg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
+.edge{fill:none;stroke:var(--accent);stroke-width:1.8;}
+.chint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;color:var(--text3);}
+.pitem{padding:7px 10px;border-radius:6px;cursor:grab;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);transition:all .12s;border:1px solid transparent;background:var(--bg);margin-bottom:4px;}
+.pitem:hover{background:var(--panel2);border-color:var(--border);}
+.pico{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+
+/* ── PIPELINES ── */
+.plcard{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);margin-bottom:10px;}
+.plhdr{padding:12px 16px;display:flex;align-items:center;gap:10px;}
+.plname{font-size:13px;font-weight:600;}
+.plmeta{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.plchain{padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;overflow-x:auto;background:var(--bg);gap:0;}
+.chag{display:flex;flex-direction:column;align-items:center;min-width:105px;background:var(--panel);border:1.5px solid var(--border);border-radius:8px;padding:10px;flex-shrink:0;}
+.chico{font-size:18px;margin-bottom:4px;}
+.chnm{font-size:10.5px;font-weight:600;font-family:var(--mono);text-align:center;}
+.chrl{font-size:10px;color:var(--text3);text-align:center;line-height:1.3;margin-top:2px;}
+.charr{width:28px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;flex-shrink:0;}
+.chag.running{border-color:var(--accent);}
+.chag.running .chico{animation:pulse 1.2s ease-in-out infinite;}
+.chag.done{border-color:var(--green);}
+.chag.waiting{opacity:.4;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+/* ── SCHEDULE ── */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sccard{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);}
+.sctop{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+.scname{font-size:13px;font-weight:600;}
+.tog{width:34px;height:18px;border-radius:9px;background:var(--panel3);border:none;cursor:pointer;position:relative;flex-shrink:0;transition:background .2s;}
+.tog.on{background:var(--green);}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:7px;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2);}
+.tog.on::after{transform:translateX(16px);}
+.ctag{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--border);padding:4px 9px;border-radius:4px;color:var(--accent);display:inline-block;margin-bottom:8px;}
+.scdesc{font-size:12px;color:var(--text2);line-height:1.5;}
+.scfoot{margin-top:10px;display:flex;align-items:center;gap:8px;}
+.scnext{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.whcard{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);margin-top:10px;}
+.whrow{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);}
+.whrow:last-child{border-bottom:none;}
+.whico{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--bbg);}
+.whi{flex:1;}
+.whn{font-size:13px;font-weight:500;}
+.whd{font-size:11.5px;color:var(--text3);}
+.whu{font-family:var(--mono);font-size:10.5px;background:var(--panel2);border:1px solid var(--border);padding:4px 8px;border-radius:4px;color:var(--text2);cursor:pointer;transition:all .13s;white-space:nowrap;}
+.whu:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── INTEGRATIONS ── */
+.igrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.icard{background:var(--panel);border:1.5px solid var(--border);border-radius:var(--r);padding:15px;box-shadow:var(--sh);transition:all .15s;cursor:pointer;display:flex;flex-direction:column;gap:10px;}
+.icard:hover{box-shadow:var(--sh2);border-color:var(--border2);}
+.icard.ok{border-color:rgba(22,163,74,.35);}
+.itop{display:flex;align-items:center;gap:10px;}
+.ilogo{width:36px;height:36px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid var(--border);background:var(--bg);}
+.iname{font-size:13px;font-weight:600;}
+.icat{font-size:11px;color:var(--text3);}
+.idesc{font-size:12px;color:var(--text2);line-height:1.45;flex:1;}
+.ifoot{display:flex;align-items:center;justify-content:space-between;}
+.ist{font-size:11px;font-family:var(--mono);color:var(--text3);}
+.ist.ok{color:var(--green);}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--text);color:#fff;padding:9px 16px;border-radius:6px;font-size:12.5px;font-family:var(--mono);transition:transform .25s cubic-bezier(.34,1.56,.64,1);z-index:200;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Icon nav -->
+<nav class="inav">
+  <div class="nlogo">OC</div>
+  <div class="ni on" onclick="go('chat',this)">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span class="tip">Chat</span>
+  </div>
+  <div class="ni" onclick="go('workflows',this)">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    <span class="tip">Workflow Builder</span>
+  </div>
+  <div class="ni" onclick="go('pipelines',this)">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="12" cy="19" r="2"/><line x1="7" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="17" y2="12"/><line x1="12" y1="7" x2="12" y2="10"/><line x1="12" y1="14" x2="12" y2="17"/></svg>
+    <span class="tip">Multi-Agent Pipelines</span>
+  </div>
+  <div class="ni" onclick="go('schedule',this)">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+    <span class="tip">Schedule &amp; Webhooks</span>
+  </div>
+  <div class="nsep"></div>
+  <div class="ni" onclick="go('integrations',this)">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    <span class="tip">Integrations</span>
+  </div>
+  <div class="nbot"><div class="pip" id="pip"></div></div>
+</nav>
+
+<!-- CHAT -->
+<div class="view on" id="view-chat" style="flex-direction:row;">
+  <div class="sb">
+    <div class="sbh"><div class="sbt">Conversations</div></div>
+    <div class="sbb">
+      <button class="newbtn" style="margin-bottom:10px;" onclick="newChat()">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New conversation
+      </button>
+      <div id="hist"></div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="mh">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="mht" id="ctit">New conversation</span>
+      <div class="mha"><span id="stxt" style="font-size:11px;color:var(--text3);font-family:var(--mono);">Connecting...</span></div>
+    </div>
+    <div class="cmsgs" id="msgs">
+      <div class="emp" id="emp">
+        <div class="eico">⬡</div>
+        <div class="etit">What can I help with?</div>
+        <div class="esub">OpenClaw agent running locally on qwen3:8b</div>
+        <div class="sugs">
+          <div class="sug" onclick="useSug(this)">Write a Python script</div>
+          <div class="sug" onclick="useSug(this)">Explain this concept</div>
+          <div class="sug" onclick="useSug(this)">Help me debug code</div>
+          <div class="sug" onclick="useSug(this)">Draft an email</div>
+          <div class="sug" onclick="useSug(this)">Brainstorm ideas</div>
+          <div class="sug" onclick="useSug(this)">Summarize a document</div>
+        </div>
+      </div>
+    </div>
+    <div class="cinp">
+      <div class="iwrap">
+        <textarea id="inp" placeholder="Message OpenClaw..." rows="1" spellcheck="false"></textarea>
+        <button class="sbtn" id="sbtn" onclick="sendMsg()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+      </div>
+      <div class="iht"><span>Enter to send · Shift+Enter for newline</span><span id="stxt2">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- WORKFLOW BUILDER -->
+<div class="view" id="view-workflows" style="flex-direction:row;">
+  <div class="sb">
+    <div class="sbh"><div class="sbt">Node Library</div></div>
+    <div class="sbb">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-family:var(--mono);">Drag onto canvas →</div>
+
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin:10px 0 5px;font-family:var(--mono);">Triggers</div>
+      <div class="pitem" draggable="true" data-t="trigger-msg"    ondragstart="pd(event)"><div class="pico" style="background:var(--abg);">💬</div><div><b style="font-size:12px;">Message</b><div style="font-size:10.5px;color:var(--text3);">WA / Telegram</div></div></div>
+      <div class="pitem" draggable="true" data-t="trigger-email"  ondragstart="pd(event)"><div class="pico" style="background:var(--bbg);">📧</div><div><b style="font-size:12px;">Email Received</b><div style="font-size:10.5px;color:var(--text3);">Gmail / Outlook</div></div></div>
+      <div class="pitem" draggable="true" data-t="trigger-webhook"ondragstart="pd(event)"><div class="pico" style="background:var(--pbg);">⚡</div><div><b style="font-size:12px;">Webhook</b><div style="font-size:10.5px;color:var(--text3);">Any HTTP event</div></div></div>
+      <div class="pitem" draggable="true" data-t="trigger-cron"   ondragstart="pd(event)"><div class="pico" style="background:var(--gbg);">🕐</div><div><b style="font-size:12px;">Scheduled</b><div style="font-size:10.5px;color:var(--text3);">Cron / time-based</div></div></div>
+
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin:14px 0 5px;font-family:var(--mono);">AI Steps</div>
+      <div class="pitem" draggable="true" data-t="ai-classify" ondragstart="pd(event)"><div class="pico" style="background:var(--abg);">🧠</div><div><b style="font-size:12px;">Classify</b><div style="font-size:10.5px;color:var(--text3);">Route by intent</div></div></div>
+      <div class="pitem" draggable="true" data-t="ai-generate" ondragstart="pd(event)"><div class="pico" style="background:var(--abg);">✍️</div><div><b style="font-size:12px;">Generate Text</b><div style="font-size:10.5px;color:var(--text3);">Draft reply / content</div></div></div>
+      <div class="pitem" draggable="true" data-t="ai-extract"  ondragstart="pd(event)"><div class="pico" style="background:var(--abg);">🔍</div><div><b style="font-size:12px;">Extract Data</b><div style="font-size:10.5px;color:var(--text3);">Pull structured fields</div></div></div>
+
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin:14px 0 5px;font-family:var(--mono);">Actions</div>
+      <div class="pitem" draggable="true" data-t="action-send"    ondragstart="pd(event)"><div class="pico" style="background:var(--bbg);">📤</div><div><b style="font-size:12px;">Send Message</b><div style="font-size:10.5px;color:var(--text3);">WA / Email / Slack</div></div></div>
+      <div class="pitem" draggable="true" data-t="action-calendar"ondragstart="pd(event)"><div class="pico" style="background:var(--gbg);">📅</div><div><b style="font-size:12px;">Calendar Event</b><div style="font-size:10.5px;color:var(--text3);">Create / update</div></div></div>
+      <div class="pitem" draggable="true" data-t="action-crm"     ondragstart="pd(event)"><div class="pico" style="background:var(--pbg);">📊</div><div><b style="font-size:12px;">Update CRM</b><div style="font-size:10.5px;color:var(--text3);">HubSpot / custom</div></div></div>
+      <div class="pitem" draggable="true" data-t="action-human"   ondragstart="pd(event)"><div class="pico" style="background:rgba(220,38,38,.07);">🙋</div><div><b style="font-size:12px;">Human Approval</b><div style="font-size:10.5px;color:var(--text3);">Pause + notify</div></div></div>
+
+      <div style="height:1px;background:var(--border);margin:14px 0;"></div>
+      <button class="btn bghost bsm" style="width:100%;justify-content:center;" onclick="clearCanvas()">Clear canvas</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="mh">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      <span class="mht">Workflow Builder</span>
+      <div class="mha">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono);">Drag nodes · connect ports · double-click to delete</span>
+        <button class="btn bprim bsm" onclick="saveWf()">Save workflow</button>
+      </div>
+    </div>
+    <div class="canvas" id="cnv" ondragover="event.preventDefault()" ondrop="drop(event)" onmousedown="cmd(event)" onmousemove="cmm(event)" onmouseup="cmu(event)">
+      <svg class="wsvg" id="wsvg"></svg>
+      <div class="chint" id="chint">
+        <div style="font-size:26px;margin-bottom:8px;">⬡</div>
+        <div style="font-size:13px;font-weight:500;margin-bottom:4px;">Drag nodes from the left panel</div>
+        <div style="font-size:12px;">Connect outputs → inputs to build your workflow</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PIPELINES -->
+<div class="view" id="view-pipelines">
+  <div class="mh">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="12" cy="19" r="2"/><line x1="7" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="17" y2="12"/><line x1="12" y1="7" x2="12" y2="10"/><line x1="12" y1="14" x2="12" y2="17"/></svg>
+    <span class="mht">Multi-Agent Pipelines</span>
+    <div class="mha"><button class="btn bprim bsm" onclick="toast('New pipeline created')">+ New Pipeline</button></div>
+  </div>
+  <div class="scr">
+    <div class="inn">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.65;">Agent A processes input and passes its structured output to Agent B. Each agent in the chain has one specific role — classify, transform, act, or review.</p>
+      <div id="plist"></div>
+      <button class="newbtn" onclick="toast('Pipeline builder opening...')">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add new pipeline
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDULE -->
+<div class="view" id="view-schedule">
+  <div class="mh">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+    <span class="mht">Scheduled Jobs &amp; Webhooks</span>
+    <div class="mha"><button class="btn bprim bsm" onclick="toast('New job created')">+ New Job</button></div>
+  </div>
+  <div class="scr">
+    <div class="inn">
+      <div class="slbl">Cron Jobs</div>
+      <div class="sgrid" id="sgrid"></div>
+      <div class="div"></div>
+      <div class="slbl">Webhook Triggers</div>
+      <div class="whcard" id="whlist"></div>
+      <button class="newbtn" style="margin-top:10px;" onclick="toast('Webhook endpoint generated')">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Generate webhook endpoint
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- INTEGRATIONS -->
+<div class="view" id="view-integrations">
+  <div class="mh">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    <span class="mht">Integrations</span>
+  </div>
+  <div class="scr">
+    <div class="inn">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:18px;">Connect external tools your agents can read from and write to during workflow execution.</p>
+      <div class="igrid" id="igrid"></div>
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toastEl"></div>
+
+<script>
+// ── NAV ──────────────────────────────────────────────────────────
+function go(name,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.getElementById('view-'+name).classList.add('on');
+  el.classList.add('on');
+}
+
+// ── STATUS ───────────────────────────────────────────────────────
+const pipEl=document.getElementById('pip'),stEl=document.getElementById('stxt'),st2El=document.getElementById('stxt2');
+async function checkSt(){
+  try{const r=await fetch('/api/status'),d=await r.json();
+    if(d.ok){pipEl.className='pip on';stEl.textContent='Connected';st2El.textContent='Connected to OpenClaw';}
+    else{pipEl.className='pip err';stEl.textContent='Offline';st2El.textContent='Gateway offline';}}
+  catch{pipEl.className='pip err';}
+}
+checkSt();setInterval(checkSt,15000);
+
+// ── CHAT ─────────────────────────────────────────────────────────
+let sid=crypto.randomUUID(),streaming=false,mc=0;
+const msgsEl=document.getElementById('msgs'),inpEl=document.getElementById('inp'),sbtnEl=document.getElementById('sbtn'),empEl=document.getElementById('emp'),histEl=document.getElementById('hist'),ctitEl=document.getElementById('ctit');
+
+inpEl.addEventListener('input',()=>{inpEl.style.height='auto';inpEl.style.height=Math.min(inpEl.scrollHeight,180)+'px';});
+inpEl.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
+function useSug(el){inpEl.value=el.textContent;inpEl.focus();inpEl.dispatchEvent(new Event('input'));}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function md(t){
+  return t
+    .replace(/```(\w*)\n?([\s\S]*?)```/g,(_,l,c)=>`<pre><button class="cpybtn" onclick="cpyCode(this)">copy</button><code>${c.trim().replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/^[-*] (.+)$/gm,'<li>$1</li>').replace(/(<li>[\s\S]+?<\/li>)/g,'<ul>$1</ul>')
+    .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');
+}
+function cpyCode(btn){navigator.clipboard.writeText(btn.nextElementSibling.textContent).then(()=>{btn.textContent='copied!';setTimeout(()=>btn.textContent='copy',1500);});}
+function scrollB(){msgsEl.scrollTop=msgsEl.scrollHeight;}
+
+async function sendMsg(){
+  const txt=inpEl.value.trim();if(!txt||streaming)return;
+  streaming=true;sbtnEl.disabled=true;inpEl.value='';inpEl.style.height='auto';mc++;
+  empEl.style.display='none';
+  const ur=document.createElement('div');ur.className='mrow u';
+  ur.innerHTML=`<div class="bub u">${esc(txt)}</div>`;
+  msgsEl.appendChild(ur);scrollB();
+  if(mc===1){
+    const t=txt.slice(0,34)+(txt.length>34?'…':'');ctitEl.textContent=t;
+    const h=document.createElement('div');h.className='hi on';h.textContent=t;
+    document.querySelectorAll('.hi').forEach(i=>i.classList.remove('on'));
+    histEl.insertBefore(h,histEl.firstChild);
+  }
+  const ar=document.createElement('div');ar.className='arow';
+  ar.innerHTML=`<div class="av">AI</div><div class="ac" id="cur"><span class="cur"></span></div>`;
+  msgsEl.appendChild(ar);scrollB();
+  const rel=document.getElementById('cur');rel.removeAttribute('id');
+  let full='';
+  try{
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:txt,sessionId:sid})});
+    const reader=res.body.getReader();const dec=new TextDecoder();let buf='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
+      for(const line of lines){
+        if(line.startsWith('data: ')){try{const d=JSON.parse(line.slice(6));if(d.text){full+=d.text;rel.innerHTML=md(full)+'<span class="cur"></span>';scrollB();}if(d.error)rel.innerHTML=`<span style="color:var(--red)">Error: ${esc(d.error)}</span>`;}catch{}}
+        if(line.startsWith('event: done')&&full)rel.innerHTML=md(full);
+      }
+    }
+    if(full)rel.innerHTML=md(full);
+  }catch(e){rel.innerHTML=`<span style="color:var(--red)">⚠ ${esc(e.message)}</span>`;toast(e.message);}
+  streaming=false;sbtnEl.disabled=false;inpEl.focus();scrollB();
+}
+function newChat(){
+  sid=crypto.randomUUID();mc=0;streaming=false;sbtnEl.disabled=false;
+  ctitEl.textContent='New conversation';msgsEl.innerHTML='';
+  empEl.style.display='flex';msgsEl.appendChild(empEl);
+  document.querySelectorAll('.hi').forEach(i=>i.classList.remove('on'));
+  inpEl.focus();
+}
+
+// ── WORKFLOW CANVAS ───────────────────────────────────────────────
+let nodes=[],edges=[],nid=0,dragN=null,dox=0,doy=0,connFrom=null,dragType=null;
+const DEFS={
+  'trigger-msg':    {l:'Message In',   t:'trigger',icon:'💬',c:'var(--accent)',b:'Incoming WhatsApp / Telegram message'},
+  'trigger-email':  {l:'Email Recv',   t:'trigger',icon:'📧',c:'var(--blue)',  b:'New email arrives in inbox'},
+  'trigger-webhook':{l:'Webhook',      t:'trigger',icon:'⚡',c:'var(--purple)',b:'HTTP POST from any external service'},
+  'trigger-cron':   {l:'Scheduled',    t:'trigger',icon:'🕐',c:'var(--green)', b:'Cron schedule (e.g. every Monday 8am)'},
+  'ai-classify':    {l:'Classify',     t:'ai',     icon:'🧠',c:'var(--accent)',b:'Detects intent and routes to the right path'},
+  'ai-generate':    {l:'Generate',     t:'ai',     icon:'✍️',c:'var(--accent)',b:'Generates reply or content via qwen3:8b'},
+  'ai-extract':     {l:'Extract Data', t:'ai',     icon:'🔍',c:'var(--accent)',b:'Pulls structured data fields from text'},
+  'action-send':    {l:'Send Message', t:'action', icon:'📤',c:'var(--blue)',  b:'Sends via WhatsApp, Email or Slack'},
+  'action-calendar':{l:'Calendar',     t:'action', icon:'📅',c:'var(--green)', b:'Creates or updates a Google Calendar event'},
+  'action-crm':     {l:'Update CRM',   t:'action', icon:'📊',c:'var(--purple)',b:'Updates HubSpot contact or deal record'},
+  'action-human':   {l:'Human Review', t:'action', icon:'🙋',c:'var(--red)',   b:'Pauses workflow, notifies human for approval'},
+};
+function pd(e){dragType=e.currentTarget.dataset.t;}
+function drop(e){
+  e.preventDefault();if(!dragType)return;
+  const cv=document.getElementById('cnv').getBoundingClientRect();
+  addNode(dragType,e.clientX-cv.left-87,e.clientY-cv.top-42);
+  dragType=null;document.getElementById('chint').style.display='none';
+}
+function addNode(type,x,y){
+  const d=DEFS[type];if(!d)return;
+  const id='n'+(++nid);const n={id,type,x,y,d};nodes.push(n);renderNode(n);return n;
+}
+function renderNode(n){
+  const{id,d,x,y}=n;const el=document.createElement('div');
+  el.className='wnode';el.id='nd-'+id;el.style.left=x+'px';el.style.top=y+'px';
+  el.innerHTML=`<div class="port pi" data-n="${id}" data-p="in"></div>
+    <div class="nhdr"><div class="nico" style="background:${d.c}22;">${d.icon}</div>
+    <div><div class="nlbl">${d.l}</div><div class="ntyp">${d.t}</div></div></div>
+    <div class="nbod">${d.b}</div>
+    <div class="port po" data-n="${id}" data-p="out"></div>`;
+  el.addEventListener('dblclick',()=>removeNode(id));
+  el.addEventListener('mousedown',e=>{
+    if(e.target.classList.contains('port'))return;
+    e.stopPropagation();
+    const r=el.getBoundingClientRect();const cv=document.getElementById('cnv').getBoundingClientRect();
+    dragN={id,el};dox=e.clientX-r.left;doy=e.clientY-r.top;el.classList.add('drag');
+    document.querySelectorAll('.wnode').forEach(n=>n.classList.remove('sel'));el.classList.add('sel');
+  });
+  el.querySelectorAll('.port').forEach(p=>{
+    p.addEventListener('mousedown',e=>{
+      e.stopPropagation();
+      if(p.dataset.p==='out'){connFrom={nid:id,p};document.getElementById('cnv').style.cursor='crosshair';}
+    });
+    p.addEventListener('mouseup',e=>{
+      e.stopPropagation();
+      if(connFrom&&connFrom.nid!==id&&p.dataset.p==='in'){addEdge(connFrom.nid,id);connFrom=null;document.getElementById('cnv').style.cursor='';}
+    });
+  });
+  document.getElementById('cnv').appendChild(el);
+}
+function cmd(e){if(e.target===document.getElementById('cnv')||e.target===document.getElementById('wsvg'))document.querySelectorAll('.wnode').forEach(n=>n.classList.remove('sel'));}
+function cmm(e){
+  if(dragN){
+    const cv=document.getElementById('cnv').getBoundingClientRect();
+    const x=e.clientX-cv.left-dox,y=e.clientY-cv.top-doy;
+    dragN.el.style.left=Math.max(0,x)+'px';dragN.el.style.top=Math.max(0,y)+'px';
+    const n=nodes.find(n=>n.id===dragN.id);if(n){n.x=x;n.y=y;}renderEdges();
+  }
+}
+function cmu(){if(dragN){dragN.el.classList.remove('drag');dragN=null;}if(connFrom){connFrom=null;document.getElementById('cnv').style.cursor='';}}
+function addEdge(from,to){if(edges.find(e=>e.from===from&&e.to===to))return;edges.push({from,to});renderEdges();}
+function getPC(nodeId,port){
+  const el=document.querySelector(`#nd-${nodeId} .port.p${port==='in'?'i':'o'}`);if(!el)return null;
+  const cv=document.getElementById('cnv').getBoundingClientRect();const r=el.getBoundingClientRect();
+  return{x:r.left+r.width/2-cv.left,y:r.top+r.height/2-cv.top};
+}
+function renderEdges(){
+  const svg=document.getElementById('wsvg');svg.innerHTML='';
+  for(const e of edges){
+    const f=getPC(e.from,'out'),t=getPC(e.to,'in');if(!f||!t)continue;
+    const dx=Math.abs(t.x-f.x)*.5;
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('class','edge');
+    path.setAttribute('d',`M${f.x},${f.y} C${f.x+dx},${f.y} ${t.x-dx},${t.y} ${t.x},${t.y}`);
+    svg.appendChild(path);
+  }
+}
+function removeNode(id){const el=document.getElementById('nd-'+id);if(el)el.remove();nodes=nodes.filter(n=>n.id!==id);edges=edges.filter(e=>e.from!==id&&e.to!==id);renderEdges();if(!nodes.length)document.getElementById('chint').style.display='block';}
+function clearCanvas(){nodes=[];edges=[];document.querySelectorAll('.wnode').forEach(n=>n.remove());document.getElementById('wsvg').innerHTML='';document.getElementById('chint').style.display='block';}
+function saveWf(){toast('Workflow saved ('+nodes.length+' nodes, '+edges.length+' connections)');}
+function loadExample(){
+  document.getElementById('chint').style.display='none';
+  const n1=addNode('trigger-msg',40,160);
+  const n2=addNode('ai-classify',265,160);
+  const n3=addNode('ai-generate',490,80);
+  const n4=addNode('action-send',715,80);
+  const n5=addNode('action-human',490,255);
+  setTimeout(()=>{addEdge(n1.id,n2.id);addEdge(n2.id,n3.id);addEdge(n3.id,n4.id);addEdge(n2.id,n5.id);renderEdges();},80);
+}
+
+// ── PIPELINES ────────────────────────────────────────────────────
+const PIPES=[
+  {name:'ServiceBot — Appointment Flow',desc:'Message → Classify intent → Find slot → Book → Confirm',runs:'247 runs',agents:[
+    {i:'💬',n:'Receiver',r:'Reads incoming WhatsApp message',s:'done'},
+    {i:'🧠',n:'Classifier',r:'Detects booking intent + date',s:'done'},
+    {i:'📅',n:'Scheduler',r:'Finds slot in Google Calendar',s:'running'},
+    {i:'📤',n:'Confirmer',r:'Sends confirmation + reminder',s:'waiting'},
+  ]},
+  {name:'ShopBot — Cart Recovery',desc:'Webhook → Profile customer → Write copy → Apply discount → Send',runs:'1,204 runs',agents:[
+    {i:'⚡',n:'Trigger',r:'Shopify abandoned cart',s:'done'},
+    {i:'🔍',n:'Profiler',r:'Analyses cart + history',s:'done'},
+    {i:'✍️',n:'Copywriter',r:'Personalised recovery message',s:'done'},
+    {i:'💰',n:'Discounter',r:'Applies 10% if cart > €150',s:'done'},
+    {i:'📤',n:'Sender',r:'Delivers via WA or email',s:'done'},
+  ]},
+  {name:'OpsBot — Email Triage',desc:'New email → Classify → Draft reply → Gate: auto-send or human review',runs:'89 runs today',agents:[
+    {i:'📧',n:'Inbox',r:'Monitors support inbox',s:'done'},
+    {i:'🧠',n:'Classifier',r:'billing / tech / general',s:'running'},
+    {i:'✍️',n:'Drafter',r:'Generates reply from KB',s:'waiting'},
+    {i:'🙋',n:'Gatekeeper',r:'Human approval if < 90%',s:'waiting'},
+  ]},
+];
+function renderPipelines(){
+  const el=document.getElementById('plist');
+  PIPES.forEach(p=>{
+    const c=document.createElement('div');c.className='plcard';
+    const chain=p.agents.map((a,i)=>`
+      <div class="chag ${a.s}"><div class="chico">${a.i}</div><div class="chnm">${a.n}</div><div class="chrl">${a.r}</div></div>
+      ${i<p.agents.length-1?'<div class="charr">→</div>':''}`).join('');
+    c.innerHTML=`
+      <div class="plhdr">
+        <span class="badge bg">active</span>
+        <div><div class="plname">${p.name}</div><div class="plmeta">${p.desc}</div></div>
+        <span style="margin-left:auto;font-size:11px;color:var(--text3);font-family:var(--mono);">${p.runs}</span>
+      </div>
+      <div class="plchain">${chain}</div>`;
+    el.appendChild(c);
+  });
+}
+
+// ── SCHEDULE ─────────────────────────────────────────────────────
+const SCHEDS=[
+  {n:'Weekly Standup Brief', c:'0 8 * * MON', d:'Pulls Linear tasks, generates priority summary, posts to Slack #standup', nx:'Mon 08:00', on:true},
+  {n:'Review Request',       c:'0 10 * * *',  d:'Sends Google review request to customers whose appointments ended 2 days ago', nx:'Tomorrow 10:00', on:true},
+  {n:'Monthly MRR Report',   c:'0 9 1 * *',   d:'Generates revenue report from Stripe + CRM data and emails to founders', nx:'1 Mar 09:00', on:true},
+  {n:'Cart Recovery Scan',   c:'*/30 * * * *', d:'Scans Shopify for carts abandoned > 1 hour and queues recovery messages', nx:'In 14 min', on:false},
+];
+const HOOKS=[
+  {i:'🛒',n:'Shopify Order Created',  d:'Fires ShopBot order confirmation workflow', u:'POST /hooks/shopify/order'},
+  {i:'🛒',n:'Shopify Cart Abandoned', d:'Fires cart recovery pipeline', u:'POST /hooks/shopify/cart'},
+  {i:'📋',n:'Typeform Submission',    d:'Creates CRM contact + sends welcome sequence', u:'POST /hooks/typeform/lead'},
+  {i:'💳',n:'Stripe Payment Failed',  d:'Notifies customer + creates support ticket', u:'POST /hooks/stripe/payment'},
+];
+function renderSchedule(){
+  const grid=document.getElementById('sgrid');
+  SCHEDS.forEach(s=>{
+    const c=document.createElement('div');c.className='sccard';
+    c.innerHTML=`
+      <div class="sctop"><div class="scname">${s.n}</div>
+      <button class="tog ${s.on?'on':''}" onclick="this.classList.toggle('on');toast('Job '+(this.classList.contains('on')?'resumed':'paused'))"></button></div>
+      <div class="ctag">${s.c}</div>
+      <div class="scdesc">${s.d}</div>
+      <div class="scfoot"><span class="scnext">Next: ${s.nx}</span><span class="badge ${s.on?'bg':'bgr'}">${s.on?'active':'paused'}</span></div>`;
+    grid.appendChild(c);
+  });
+  const wl=document.getElementById('whlist');
+  HOOKS.forEach(h=>{
+    const row=document.createElement('div');row.className='whrow';
+    row.innerHTML=`
+      <div class="whico">${h.i}</div>
+      <div class="whi"><div class="whn">${h.n}</div><div class="whd">${h.d}</div></div>
+      <div class="whu" onclick="cpyHook('${h.u}')" title="Click to copy">${h.u}</div>`;
+    wl.appendChild(row);
+  });
+}
+function cpyHook(u){navigator.clipboard.writeText('http://localhost:3000'+u);toast('Copied: '+u);}
+
+// ── INTEGRATIONS ─────────────────────────────────────────────────
+const INTS=[
+  {i:'📱',n:'WhatsApp Business',cat:'Messaging',  d:'Send and receive messages, media, templates via WA Business API',ok:true},
+  {i:'✉️',n:'Gmail',           cat:'Email',       d:'Read inbox, send emails, manage labels and filters automatically',ok:true},
+  {i:'💬',n:'Slack',           cat:'Team chat',   d:'Post messages, read channels, create threads and mentions',ok:false},
+  {i:'📅',n:'Google Calendar', cat:'Calendar',    d:'Create events, check availability, send invites and reminders',ok:true},
+  {i:'🔵',n:'Telegram',        cat:'Messaging',   d:'Bot API for customer chat, group notifications and broadcasts',ok:false},
+  {i:'🛒',n:'Shopify',         cat:'E-commerce',  d:'Access orders, customers, products, inventory and fulfilment',ok:false},
+  {i:'📊',n:'HubSpot',         cat:'CRM',         d:'Create and update contacts, deals, tickets and activity logs',ok:false},
+  {i:'💳',n:'Stripe',          cat:'Payments',    d:'Read payment events, issue refunds, manage subscriptions',ok:false},
+  {i:'📝',n:'Notion',          cat:'Knowledge',   d:'Read and write pages, update databases, create structured notes',ok:false},
+  {i:'🎯',n:'Linear',          cat:'Project mgmt',d:'Create issues, update status, assign tasks and query roadmap',ok:false},
+  {i:'📬',n:'Mailchimp',       cat:'Email mktg',  d:'Add subscribers, trigger automations, track campaign metrics',ok:false},
+  {i:'⚡',n:'Custom Webhook',  cat:'Developer',   d:'Connect any service via HTTP webhook — inbound or outbound',ok:true},
+];
+function renderIntegrations(){
+  const g=document.getElementById('igrid');
+  INTS.forEach(i=>{
+    const c=document.createElement('div');c.className='icard'+(i.ok?' ok':'');
+    c.innerHTML=`
+      <div class="itop"><div class="ilogo">${i.i}</div><div><div class="iname">${i.n}</div><div class="icat">${i.cat}</div></div></div>
+      <div class="idesc">${i.d}</div>
+      <div class="ifoot">
+        <span class="ist ${i.ok?'ok':''}">${i.ok?'● Connected':'○ Not connected'}</span>
+        <button class="btn bghost bsm" onclick="toast('${i.ok?'Configure':'Connecting'} ${i.n}...')">${i.ok?'Configure':'Connect'}</button>
+      </div>`;
+    g.appendChild(c);
+  });
+}
+
+// ── TOAST ────────────────────────────────────────────────────────
+function toast(msg){const t=document.getElementById('toastEl');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+// ── INIT ─────────────────────────────────────────────────────────
+renderPipelines();
+renderSchedule();
+renderIntegrations();
+setTimeout(loadExample,150);
+inpEl.focus();
+</script>
+</body>
+</html>
